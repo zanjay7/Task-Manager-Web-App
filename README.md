@@ -18,7 +18,7 @@ cd backend
 python -m venv venv
 venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-Copy-Item .env.example .env
+Copy-Item .env
 python manage.py migrate
 python manage.py runserver
 ```
@@ -34,7 +34,7 @@ Open a new terminal:
 ```powershell
 cd frontend
 npm install
-Copy-Item .env.example .env
+Copy-Item .env
 npm start
 ```
 
