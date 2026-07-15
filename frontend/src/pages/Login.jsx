@@ -14,18 +14,27 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
+
     try {
       await login(username, password);
       navigate('/');
     } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-        'Invalid username or password.'
-      );
-    } finally {
-      setLoading(false);
+      let message = 'Invalid username or password.';
+
+      if (err.response && err.response.data && err.response.data.detail) {
+        message = err.response.data.detail;
+      }
+
+      setError(message);
     }
+
+    setLoading(false);
   };
+
+  let buttonText = 'Log In';
+  if (loading) {
+    buttonText = 'Logging in...';
+  }
 
   return (
     <div className="auth-page">
@@ -47,7 +56,7 @@ const Login = () => {
         />
 
         <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
-          {loading ? 'Logging in...' : 'Log In'}
+          {buttonText}
         </button>
 
         <p className="auth-switch">

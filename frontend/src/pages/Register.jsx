@@ -3,31 +3,60 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Register = () => {
-  const [form, setForm] = useState({ username: '', email: '', password: '', password2: '' });
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const getErrorMessage = (err) => {
+    if (!err.response || !err.response.data) {
+      return 'Registration failed.';
+    }
+
+    const data = err.response.data;
+    const fieldNames = Object.keys(data);
+
+    if (fieldNames.length === 0) {
+      return 'Registration failed.';
+    }
+
+    const firstFieldName = fieldNames[0];
+    const firstFieldValue = data[firstFieldName];
+
+    if (Array.isArray(firstFieldValue)) {
+      return firstFieldValue[0];
+    }
+
+    if (firstFieldValue) {
+      return firstFieldValue;
+    }
+
+    return 'Registration failed.';
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+
     try {
-      await register(form.username, form.email, form.password, form.password2);
+      await register(username, email, password, password2);
       navigate('/');
     } catch (err) {
-      const data = err.response?.data;
-      const firstError = data ? Object.values(data)[0] : null;
-      setError(
-        Array.isArray(firstError) ? firstError[0] : firstError || 'Registration failed.'
-      );
-    } finally {
-      setLoading(false);
+      setError(getErrorMessage(err));
     }
+
+    setLoading(false);
   };
+
+  let buttonText = 'Register';
+  if (loading) {
+    buttonText = 'Creating account...';
+  }
 
   return (
     <div className="auth-page">
@@ -38,19 +67,37 @@ const Register = () => {
         {error && <div className="auth-error">{error}</div>}
 
         <label>Username</label>
-        <input name="username" value={form.username} onChange={handleChange} required />
+        <input
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          required
+        />
 
         <label>Email</label>
-        <input type="email" name="email" value={form.email} onChange={handleChange} />
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
         <label>Password</label>
-        <input type="password" name="password" value={form.password} onChange={handleChange} required />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
 
         <label>Confirm Password</label>
-        <input type="password" name="password2" value={form.password2} onChange={handleChange} required />
+        <input
+          type="password"
+          value={password2}
+          onChange={(e) => setPassword2(e.target.value)}
+          required
+        />
 
         <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
-          {loading ? 'Creating account...' : 'Register'}
+          {buttonText}
         </button>
 
         <p className="auth-switch">

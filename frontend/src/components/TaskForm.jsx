@@ -1,66 +1,98 @@
 import React, { useState, useEffect } from 'react';
 
-const emptyTask = { title: '', description: '', priority: 'medium', due_date: '' };
-
 const TaskForm = ({ onSubmit, editingTask, onCancelEdit }) => {
-  const [form, setForm] = useState(emptyTask);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [priority, setPriority] = useState('medium');
+  const [dueDate, setDueDate] = useState('');
 
   useEffect(() => {
     if (editingTask) {
-      setForm({
-        title: editingTask.title,
-        description: editingTask.description || '',
-        priority: editingTask.priority,
-        due_date: editingTask.due_date || '',
-      });
+      setTitle(editingTask.title);
+
+      if (editingTask.description) {
+        setDescription(editingTask.description);
+      } else {
+        setDescription('');
+      }
+
+      setPriority(editingTask.priority);
+
+      if (editingTask.due_date) {
+        setDueDate(editingTask.due_date);
+      } else {
+        setDueDate('');
+      }
     } else {
-      setForm(emptyTask);
+      setTitle('');
+      setDescription('');
+      setPriority('medium');
+      setDueDate('');
     }
   }, [editingTask]);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.title.trim()) return;
-    onSubmit({ ...form, due_date: form.due_date || null });
-    if (!editingTask) setForm(emptyTask);
+
+    if (!title.trim()) {
+      return;
+    }
+
+    let dueDateToSend = null;
+    if (dueDate) {
+      dueDateToSend = dueDate;
+    }
+
+    onSubmit({
+      title: title,
+      description: description,
+      priority: priority,
+      due_date: dueDateToSend,
+    });
+
+    if (!editingTask) {
+      setTitle('');
+      setDescription('');
+      setPriority('medium');
+      setDueDate('');
+    }
   };
+
+  let submitButtonText = 'Add Task';
+  if (editingTask) {
+    submitButtonText = 'Save Changes';
+  }
 
   return (
     <form className="task-form" onSubmit={handleSubmit}>
       <input
         type="text"
-        name="title"
         placeholder="Task title"
-        value={form.title}
-        onChange={handleChange}
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
         required
       />
       <textarea
-        name="description"
         placeholder="Description (optional)"
-        value={form.description}
-        onChange={handleChange}
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
         rows={2}
       />
       <div className="task-form-row">
-        <select name="priority" value={form.priority} onChange={handleChange}>
+        <select value={priority} onChange={(e) => setPriority(e.target.value)}>
           <option value="low">Low</option>
           <option value="medium">Medium</option>
           <option value="high">High</option>
         </select>
         <input
           type="date"
-          name="due_date"
-          value={form.due_date || ''}
-          onChange={handleChange}
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
         />
         <button type="submit" className="btn btn-primary">
-          {editingTask ? 'Save Changes' : 'Add Task'}
+          {submitButtonText}
         </button>
+
         {editingTask && (
           <button type="button" className="btn btn-outline" onClick={onCancelEdit}>
             Cancel

@@ -7,27 +7,40 @@ import ProgressBar from '../components/ProgressBar';
 
 const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
-  const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0, completed_percentage: 0 });
+  const [stats, setStats] = useState({
+    total: 0,
+    completed: 0,
+    pending: 0,
+    completed_percentage: 0,
+  });
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [editingTask, setEditingTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
-  const [hasNext, setHasNext] = useState(false);
-  const [hasPrev, setHasPrev] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPreviousPage, setHasPreviousPage] = useState(false);
 
   const fetchTasks = useCallback(async () => {
     setLoading(true);
     setError('');
+
     try {
-      const params = { page };
-      if (filter !== 'all') params.status = filter;
-      if (search) params.search = search;
-      const { data } = await api.get('/tasks/', { params });
-      setTasks(data.results ?? data);
-      setHasNext(Boolean(data.next));
-      setHasPrev(Boolean(data.previous));
+      const queryParams = { page };
+      if (filter !== 'all') {
+        queryParams.status = filter;
+      }
+      if (search) {
+        queryParams.search = search;
+      }
+
+      const response = await api.get('/tasks/', { params: queryParams });
+
+      const taskList = response.data.results || response.data;
+      setTasks(taskList);
+      setHasNextPage(Boolean(response.data.next));
+      setHasPreviousPage(Boolean(response.data.previous));
     } catch (err) {
       setError('Could not load tasks. Please try again.');
     } finally {
@@ -37,25 +50,32 @@ const Dashboard = () => {
 
   const fetchStats = useCallback(async () => {
     try {
-      const { data } = await api.get('/tasks/stats/');
-      setStats(data);
+      const response = await api.get('/tasks/stats/');
+      setStats(response.data);
     } catch (err) {
-      // non-critical, ignore silently
     }
   }, []);
 
-  useEffect(() => { setPage(1); }, [filter, search]);
-  useEffect(() => { fetchTasks(); }, [fetchTasks]);
-  useEffect(() => { fetchStats(); }, [fetchStats, tasks]);
+  useEffect(() => {
+    setPage(1);
+  }, [filter, search]);
 
-  const handleCreateOrUpdate = async (payload) => {
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats, tasks]);
+
+  const handleCreateOrUpdate = async (taskData) => {
     setError('');
     try {
       if (editingTask) {
-        await api.put(`/tasks/${editingTask.id}/`, payload);
+        await api.put(`/tasks/${editingTask.id}/`, taskData);
         setEditingTask(null);
       } else {
-        await api.post('/tasks/', payload);
+        await api.post('/tasks/', taskData);
       }
       fetchTasks();
     } catch (err) {
@@ -63,7 +83,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleToggle = async (task) => {
+  const handleToggleComplete = async (task) => {
     try {
       await api.patch(`/tasks/${task.id}/`, { completed: !task.completed });
       fetchTasks();
@@ -72,10 +92,12 @@ const Dashboard = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this task?')) return;
+  const handleDelete = async (taskId) => {
+    const confirmed = window.confirm('Delete this task?');
+    if (!confirmed) return;
+
     try {
-      await api.delete(`/tasks/${id}/`);
+      await api.delete(`/tasks/${taskId}/`);
       fetchTasks();
     } catch (err) {
       setError('Could not delete the task.');
@@ -96,21 +118,28 @@ const Dashboard = () => {
         onCancelEdit={() => setEditingTask(null)}
       />
 
-      <TaskFilter filter={filter} setFilter={setFilter} search={search} setSearch={setSearch} />
+      <TaskFilter
+        filter={filter}
+        setFilter={setFilter}
+        search={search}
+        setSearch={setSearch}
+      />
 
       {error && <div className="auth-error">{error}</div>}
 
-      {loading ? (
-        <p className="empty-state">Loading tasks...</p>
-      ) : tasks.length === 0 ? (
+      {loading && <p className="empty-state">Loading tasks...</p>}
+
+      {!loading && tasks.length === 0 && (
         <p className="empty-state">No tasks here yet.</p>
-      ) : (
+      )}
+
+      {!loading && tasks.length > 0 && (
         <div className="task-list">
           {tasks.map((task) => (
             <TaskItem
               key={task.id}
               task={task}
-              onToggle={handleToggle}
+              onToggle={handleToggleComplete}
               onEdit={setEditingTask}
               onDelete={handleDelete}
             />
@@ -118,13 +147,21 @@ const Dashboard = () => {
         </div>
       )}
 
-      {(hasNext || hasPrev) && (
+      {(hasNextPage || hasPreviousPage) && (
         <div className="pagination">
-          <button className="btn btn-outline" disabled={!hasPrev} onClick={() => setPage((p) => p - 1)}>
+          <button
+            className="btn btn-outline"
+            disabled={!hasPreviousPage}
+            onClick={() => setPage((current) => current - 1)}
+          >
             Previous
           </button>
           <span>Page {page}</span>
-          <button className="btn btn-outline" disabled={!hasNext} onClick={() => setPage((p) => p + 1)}>
+          <button
+            className="btn btn-outline"
+            disabled={!hasNextPage}
+            onClick={() => setPage((current) => current + 1)}
+          >
             Next
           </button>
         </div>

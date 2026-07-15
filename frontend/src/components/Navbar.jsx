@@ -11,18 +11,27 @@ const Navbar = ({ theme, toggleTheme }) => {
     navigate('/login');
   };
 
+  let themeIcon = '☀️';
+  if (theme === 'light') {
+    themeIcon = '🌙';
+  }
+
   return (
     <nav className="navbar">
       <span className="navbar-brand">Task Manager</span>
       <div className="navbar-actions">
         <button className="icon-btn" onClick={toggleTheme} title="Toggle theme">
-          {theme === 'light' ? '🌙' : '☀️'}
+          {themeIcon}
         </button>
+
         {user && (
-          <>
-            <span className="navbar-user">Hi, {user.username}</span>
-            <button className="btn btn-outline" onClick={handleLogout}>Logout</button>
-          </>
+          <span className="navbar-user">Hi, {user.username}</span>
+        )}
+
+        {user && (
+          <button className="btn btn-outline" onClick={handleLogout}>
+            Logout
+          </button>
         )}
       </div>
     </nav>
