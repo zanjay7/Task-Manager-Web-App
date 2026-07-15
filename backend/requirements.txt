@@ -1,0 +1,10 @@
+Django>=4.2,<5.0
+djangorestframework>=3.14
+djangorestframework-simplejwt>=5.3
+django-environ>=0.11
+django-cors-headers>=4.3
+
+# Only needed if you switch DB_ENGINE=mysql in .env.
+# mysqlclient can be tricky to install on Windows (needs MySQL Connector/C or
+# build tools). Uncomment the line below only if you're using MySQL.
+# mysqlclient>=2.2
